@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     jq \
     curl \
     sudo \
+    tini \
     && rm -rf /var/lib/apt/lists/*
 
 # Create developer user with sudo access
@@ -43,4 +44,4 @@ ENV GIT_EDITOR="zed --wait"
 
 EXPOSE 22
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/usr/local/bin/entrypoint.sh"]
