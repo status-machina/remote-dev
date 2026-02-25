@@ -1,0 +1,20 @@
+#!/bin/bash
+set -euo pipefail
+
+BRANCH=${1:?Usage: wt-new <branch-name>}
+
+MAIN_WORKTREE=$(git worktree list --porcelain | head -1 | sed 's/worktree //')
+BASE_DIR=$(basename "$MAIN_WORKTREE")
+TARGET="/home/developer/projects/${BASE_DIR}--${BRANCH}"
+
+git worktree add "$TARGET" -b "$BRANCH"
+
+# Copy over gitignored config files that don't travel with worktrees
+for f in .npmrc .env .envrc; do
+    if [ -f "$MAIN_WORKTREE/$f" ]; then
+        cp "$MAIN_WORKTREE/$f" "$TARGET/$f"
+        echo "Copied $f from main worktree"
+    fi
+done
+
+echo "Worktree created at: $TARGET"
