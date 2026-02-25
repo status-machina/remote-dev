@@ -14,6 +14,16 @@ else
     chmod 600 /etc/ssh/ssh_host_*_key
 fi
 
+# --- Persist Claude Code config (auth, settings) via projects volume ---
+CLAUDE_PERSIST="/home/developer/projects/.claude-config"
+CLAUDE_HOME="/home/developer/.claude"
+mkdir -p "$CLAUDE_PERSIST"
+rm -rf "$CLAUDE_HOME"
+ln -s "$CLAUDE_PERSIST" "$CLAUDE_HOME"
+chown -h developer:developer "$CLAUDE_HOME"
+chown -R developer:developer "$CLAUDE_PERSIST"
+echo "Claude Code config persisted at $CLAUDE_PERSIST"
+
 # --- Authorized Keys ---
 if [ -n "${SSH_PUBLIC_KEY:-}" ]; then
     mkdir -p /home/developer/.ssh
