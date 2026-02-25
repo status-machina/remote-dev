@@ -4,8 +4,11 @@ set -euo pipefail
 BRANCH=${1:?Usage: wt-new <branch-name>}
 
 MAIN_WORKTREE=$(git worktree list --porcelain | head -1 | sed 's/worktree //')
+# Preserve the work/ or personal/ subdirectory in the worktree path
+RELATIVE_PATH=$(realpath --relative-to=/home/developer/projects "$MAIN_WORKTREE")
+PARENT_DIR=$(dirname "$RELATIVE_PATH")
 BASE_DIR=$(basename "$MAIN_WORKTREE")
-TARGET="/home/developer/projects/${BASE_DIR}--${BRANCH}"
+TARGET="/home/developer/projects/${PARENT_DIR}/${BASE_DIR}--${BRANCH}"
 
 git worktree add "$TARGET" -b "$BRANCH"
 

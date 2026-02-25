@@ -26,47 +26,60 @@ else
     echo "WARNING: SSH_PUBLIC_KEY not set. You won't be able to SSH in."
 fi
 
-# --- Git Identity ---
-if [ -n "${GIT_USER_NAME:-}" ]; then
-    su - developer -c "git config --global user.name '$GIT_USER_NAME'"
-    echo "Git user.name set to: $GIT_USER_NAME"
-fi
-if [ -n "${GIT_USER_EMAIL:-}" ]; then
-    su - developer -c "git config --global user.email '$GIT_USER_EMAIL'"
-    echo "Git user.email set to: $GIT_USER_EMAIL"
-fi
-
-# --- GitHub Deploy Key (persisted under projects volume) ---
+# --- GitHub Deploy Keys (persisted under projects volume) ---
 DEPLOY_KEY_DIR="/home/developer/projects/.ssh-keys"
-DEPLOY_KEY="$DEPLOY_KEY_DIR/github_deploy_key"
+PERSONAL_KEY="$DEPLOY_KEY_DIR/github_personal"
+WORK_KEY="$DEPLOY_KEY_DIR/github_work"
 
-if [ ! -f "$DEPLOY_KEY" ]; then
-    echo "Generating GitHub deploy key..."
-    mkdir -p "$DEPLOY_KEY_DIR"
-    ssh-keygen -t ed25519 -f "$DEPLOY_KEY" -N "" -C "devbox-deploy-key"
-    chown -R developer:developer "$DEPLOY_KEY_DIR"
+mkdir -p "$DEPLOY_KEY_DIR"
+
+if [ ! -f "$PERSONAL_KEY" ]; then
+    echo "Generating personal GitHub deploy key..."
+    ssh-keygen -t ed25519 -f "$PERSONAL_KEY" -N "" -C "devbox-personal"
 fi
 
-chmod 600 "$DEPLOY_KEY"
-chmod 644 "$DEPLOY_KEY.pub"
+if [ ! -f "$WORK_KEY" ]; then
+    echo "Generating work GitHub deploy key..."
+    ssh-keygen -t ed25519 -f "$WORK_KEY" -N "" -C "devbox-work"
+fi
 
-# Configure SSH to use the deploy key for GitHub
-mkdir -p /home/developer/.ssh
-cat > /home/developer/.ssh/config <<EOF
-Host github.com
-    HostName github.com
-    User git
-    IdentityFile $DEPLOY_KEY
-    StrictHostKeyChecking accept-new
+chown -R developer:developer "$DEPLOY_KEY_DIR"
+chmod 600 "$PERSONAL_KEY" "$WORK_KEY"
+chmod 644 "$PERSONAL_KEY.pub" "$WORK_KEY.pub"
+
+# --- Git Identity & SSH Key Scoping ---
+mkdir -p /home/developer/.config/git
+
+# Global gitconfig: personal identity + personal SSH key as default
+su - developer -c "git config --global user.name '${GIT_USER_NAME:-developer}'"
+su - developer -c "git config --global user.email '${GIT_USER_EMAIL:-developer@devbox}'"
+su - developer -c "git config --global core.sshCommand 'ssh -i $PERSONAL_KEY -o StrictHostKeyChecking=accept-new'"
+echo "Git identity set: ${GIT_USER_NAME:-developer} <${GIT_USER_EMAIL:-developer@devbox}>"
+
+# Work override scoped to ~/projects/work/
+if [ -n "${GIT_WORK_EMAIL:-}" ]; then
+    cat > /home/developer/.config/git/work <<EOF
+[user]
+    email = $GIT_WORK_EMAIL
+[core]
+    sshCommand = ssh -i $WORK_KEY -o StrictHostKeyChecking=accept-new
 EOF
-chmod 600 /home/developer/.ssh/config
-chown -R developer:developer /home/developer/.ssh
+    su - developer -c "git config --global includeIf.gitdir:~/projects/work/.path /home/developer/.config/git/work"
+    echo "Git work override: $GIT_WORK_EMAIL + work key (for ~/projects/work/)"
+fi
+
+chown -R developer:developer /home/developer/.config/git
 
 echo ""
 echo "============================================="
-echo "  GitHub Deploy Key (add to GitHub):"
+echo "  Personal GitHub Deploy Key:"
 echo "============================================="
-cat "$DEPLOY_KEY.pub"
+cat "$PERSONAL_KEY.pub"
+echo ""
+echo "============================================="
+echo "  Work GitHub Deploy Key:"
+echo "============================================="
+cat "$WORK_KEY.pub"
 echo "============================================="
 echo ""
 
