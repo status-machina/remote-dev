@@ -23,13 +23,13 @@ RUN mkdir -p /var/run/sshd \
 # Remove SSH host keys (regenerated at runtime by entrypoint)
 RUN rm -f /etc/ssh/ssh_host_*_key /etc/ssh/ssh_host_*_key.pub
 
-# Install Claude Code using native installer (as developer user)
+# Install Claude Code using native installer
 USER developer
 RUN curl -fsSL https://claude.ai/install.sh | bash
 USER root
 
 # Ensure Claude Code is on PATH for all login shells
-RUN echo 'export PATH="/home/developer/.claude/local/bin:$PATH"' >> /home/developer/.bashrc
+RUN echo 'export PATH="/home/developer/.local/bin:$PATH"' >> /home/developer/.bashrc
 
 # Set up projects directory
 RUN mkdir -p /home/developer/projects && chown developer:developer /home/developer/projects
