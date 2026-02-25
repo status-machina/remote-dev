@@ -68,7 +68,7 @@ EOF
     echo "Git work override: $GIT_WORK_EMAIL + work key (for ~/projects/work/)"
 fi
 
-chown -R developer:developer /home/developer/.config/git
+chown -R developer:developer /home/developer/.config
 
 echo ""
 echo "============================================="
