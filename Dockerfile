@@ -28,8 +28,8 @@ USER developer
 RUN curl -fsSL https://claude.ai/install.sh | bash
 USER root
 
-# Ensure Claude Code is on PATH for all login shells
-RUN echo 'export PATH="/home/developer/.local/bin:$PATH"' >> /home/developer/.bashrc
+# Ensure Claude Code is on PATH for all contexts (SSH, login, non-login)
+RUN ln -s /home/developer/.local/bin/claude /usr/local/bin/claude
 
 # Set up projects directory
 RUN mkdir -p /home/developer/projects && chown developer:developer /home/developer/projects
